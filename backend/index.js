@@ -323,6 +323,7 @@ io.on('connection',(socket)=>{
 // app.get("*",(req,res)=>{
 //     res.sendFile(path.join(__dirname,"frontend","dist","index.html"))
 // })
+module.exports = { checkIds, findRecipient, findUser, findIndex };
 
 http.listen(PORT ,()=>{console.log("server running on port 3000")});
 
