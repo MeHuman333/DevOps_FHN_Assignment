@@ -24,24 +24,56 @@ const URL=process.env.URL;
 //     methods:["GET","POST","PUT","DELETE"]
 // }))
 
+console.log('URL '+URL);
+
 app.use(cors({
     origin:"*",
     credentials:true,
     methods:["GET","POST","PUT","DELETE"]
 }));
 
-app.all((req, res, next) => {
+
+// app.all((req, res, next) => {
+//     res.setHeader('Access-Control-Allow-Credentials', true);
+//     res.setHeader('Access-Control-Allow-Origin', '*');
+//     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+//     res.setHeader(
+//         'Access-Control-Allow-Headers',
+//         'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+//       )
+//     next();
+//   });
+
+app.all('/*', (req, res, next) => {
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader(
         'Access-Control-Allow-Headers',
         'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-      )
+    );
     next();
-  });
+});
 
-mongoose.connect(URL).then(()=>{console.log('mongodb  connected')})
+
+
+//mongoose.connect(URL).then(()=>{console.log('mongodb  connected')})
+
+// MongoDB connection
+//const mongoURI = 'mongodb://admin:password@localhost:27017/mydb?authSource=admin';
+
+mongoose.connect(URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 20000,
+    socketTimeoutMS: 45000
+}).then(() => {
+    console.log('Connected to MongoDB');
+}).catch((err) => {
+    console.error('Error connecting to MongoDB:', err);
+});
+
+
 
 function checkIds(data,array){
     let found=false;
@@ -131,7 +163,7 @@ const authenticateJwt = (req, res, next) => {
 const socketIds=[];
 
 const userlist = mongoose.model('userlist',userSchema);
-
+console.log('userlist is ',userlist);
 // const chats= [{name:'Subham',message:"hello hru"},{name:'Ayush',message:"kya kr he ho"},{name:'Subham',message:"hello hru"},{name:'Subham',message:"hello hru"},{name:'Subham',message:"hello hru"},{name:'Subham',message:"hello hru"},{name:'Subham',message:"hello hru"}];
 
 const io = require('socket.io')(http, {
@@ -142,6 +174,13 @@ const io = require('socket.io')(http, {
     }
 });
 app.use(cors());
+
+// const newUser=userlist.create({
+//     name: 'ram',
+//     password:'ram123',
+//     friendList: []
+// })
+// console.log('newUser ',newUser);
 
 // app.use(cors({
 //     origin:["https://hello-chat-silk.vercel.app"],
@@ -323,9 +362,9 @@ io.on('connection',(socket)=>{
 // app.get("*",(req,res)=>{
 //     res.sendFile(path.join(__dirname,"frontend","dist","index.html"))
 // })
-module.exports = { checkIds, findRecipient, findUser, findIndex };
+console.log("PORT ",PORT);
 
-http.listen(PORT ,()=>{console.log("server running on port 3000")});
+http.listen(PORT ,()=>{console.log("server running on port "+PORT)});
 
 
 //dotenv
