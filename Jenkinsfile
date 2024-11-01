@@ -23,7 +23,7 @@ pipeline {
                         aws eks create-cluster \
                             --name my-chat-app-cluster \
                             --role-arn arn:aws:iam::${ACCOUNT_ID}:role/EKSClusterRole \
-                            --resources-vpc-config subnetIds=subnet-abc123,subnet-def456,securityGroupIds=sg-01234567
+                            --resources-vpc-config subnetIds=subnet-07f53821c5571338c,subnet-0b6eec8e8f6b141d7,securityGroupIds=sg-00069e451d8bc4fad
                         """
 
                         // Wait for cluster to be active
@@ -36,7 +36,7 @@ pipeline {
                             --nodegroup-name my-node-group \
                             --scaling-config minSize=2,maxSize=5,desiredSize=3 \
                             --node-role arn:aws:iam::${ACCOUNT_ID}:role/EKSNodeRole \
-                            --subnets subnet-abc123 subnet-def456
+                            --subnets subnet-07f53821c5571338c subnet-0b6eec8e8f6b141d7
                         """
 
                         // Wait for node group to be active
@@ -156,16 +156,16 @@ pipeline {
             steps {
                 script {
                     // Install Prometheus and Grafana using Helm
-                    sh """
-                    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-                    helm repo add grafana https://grafana.github.io/helm-charts
-                    helm repo update
-                    helm install prometheus prometheus-community/prometheus --namespace monitoring
-                    helm install grafana grafana/grafana --namespace monitoring
-                    """
+                   // sh """
+                   // helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+                   // helm repo add grafana https://grafana.github.io/helm-charts
+                   // helm repo update
+                   // helm install prometheus prometheus-community/prometheus --namespace monitoring
+                   // helm install grafana grafana/grafana --namespace monitoring
+                   // """
                     
                     // Output Grafana access information
-                    echo "Grafana URL: http://<grafana-service-external-ip>:3000"
+                    //echo "Grafana URL: http://<grafana-service-external-ip>:3000"
                     echo "Use admin/admin for initial Grafana login."
                 }
             }
