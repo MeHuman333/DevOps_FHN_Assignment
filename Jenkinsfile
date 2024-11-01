@@ -4,8 +4,8 @@ pipeline {
     environment {
         AWS_CREDENTIALS_ID = 'aws-access-key' // Jenkins credential ID for AWS IAM credentials
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub-creds' // Jenkins credential ID for DockerHub
-        ACCOUNT_ID = '038462748515' // Your AWS account ID
-        REGION = 'us-east-1' // Your AWS region
+        ACCOUNT_ID = '038462748515' // AWS account ID
+        REGION = 'us-east-1' // AWS region
         BUILD_ID = "${env.BUILD_ID}" // Jenkins build ID
         BACKEND_IMAGE = "mehooman/my-backend-app:${BUILD_ID}"
         FRONTEND_IMAGE = "mehooman/my-frontend-app:${BUILD_ID}"
@@ -14,6 +14,38 @@ pipeline {
     }
 
     stages {
+        stage('Create EKS Cluster') {
+            steps {
+                withAWS(credentials: AWS_CREDENTIALS_ID, region: REGION) {
+                    script {
+                        // Create the EKS cluster if it does not exist
+                        sh """
+                        aws eks create-cluster \
+                            --name my-chat-app-cluster \
+                            --role-arn arn:aws:iam::${ACCOUNT_ID}:role/EKSClusterRole \
+                            --resources-vpc-config subnetIds=subnet-abc123,subnet-def456,securityGroupIds=sg-01234567
+                        """
+
+                        // Wait for cluster to be active
+                        sh "aws eks wait cluster-active --name my-chat-app-cluster"
+
+                        // Create node group for EKS cluster
+                        sh """
+                        aws eks create-nodegroup \
+                            --cluster-name my-chat-app-cluster \
+                            --nodegroup-name my-node-group \
+                            --scaling-config minSize=2,maxSize=5,desiredSize=3 \
+                            --node-role arn:aws:iam::${ACCOUNT_ID}:role/EKSNodeRole \
+                            --subnets subnet-abc123 subnet-def456
+                        """
+
+                        // Wait for node group to be active
+                        sh "aws eks wait nodegroup-active --cluster-name my-chat-app-cluster --nodegroup-name my-node-group"
+                    }
+                }
+            }
+        }
+
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM', branches: [[name: 'main']], 
@@ -92,6 +124,49 @@ pipeline {
                         sh "aws ecs update-service --cluster Production-cluster --service my-backend-app-staging --force-new-deployment"
                         sh "aws ecs update-service --cluster Production-cluster --service my-frontend-app-staging --force-new-deployment"
                     }
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                withAWS(credentials: AWS_CREDENTIALS_ID, region: REGION) {
+                    script {
+                        // Configure kubectl for EKS cluster and deploy images to Kubernetes using Helm
+                        sh "aws eks update-kubeconfig --name my-chat-app-cluster --region ${REGION}"
+                        sh """
+                        helm upgrade --install backend ./backend --set image.repository=${ECR_BACKEND_IMAGE} --namespace chat-app
+                        helm upgrade --install frontend ./frontend --set image.repository=${ECR_FRONTEND_IMAGE} --namespace chat-app
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Configure HPA for Kubernetes') {
+            steps {
+                script {
+                    // Apply HPA configuration to enable scaling
+                    sh "kubectl apply -f hpa.yaml --namespace chat-app"
+                }
+            }
+        }
+
+        stage('Setup Monitoring with Prometheus and Grafana') {
+            steps {
+                script {
+                    // Install Prometheus and Grafana using Helm
+                    sh """
+                    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+                    helm repo add grafana https://grafana.github.io/helm-charts
+                    helm repo update
+                    helm install prometheus prometheus-community/prometheus --namespace monitoring
+                    helm install grafana grafana/grafana --namespace monitoring
+                    """
+                    
+                    // Output Grafana access information
+                    echo "Grafana URL: http://<grafana-service-external-ip>:3000"
+                    echo "Use admin/admin for initial Grafana login."
                 }
             }
         }
