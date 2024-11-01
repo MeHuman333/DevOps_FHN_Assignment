@@ -1,0 +1,16 @@
+replicaCount: 1
+
+image:
+  repository: mehooman/my-backend-app
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: false
+
+resources: {}
+

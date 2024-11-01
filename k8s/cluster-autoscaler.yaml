@@ -1,0 +1,8 @@
+spec:
+  containers:
+    - name: cluster-autoscaler
+      command:
+        - ./cluster-autoscaler
+        - --cloud-provider=aws
+        - --nodes=1:10:<nodegroup-name> # Adjust min: 1, max: 10 nodes as needed
+

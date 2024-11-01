@@ -1,0 +1,12 @@
+replicaCount: 2
+
+image:
+  repository: "038462748515.dkr.ecr.us-east-1.amazonaws.com/mehooman/my-frontend-app" # Update with your ECR image path
+  tag: "latest" # Use "latest" or "${BUILD_ID}" for CI/CD
+
+service:
+  type: LoadBalancer
+  port: 80
+
+resources: {}
+
