@@ -135,8 +135,8 @@ pipeline {
                         // Configure kubectl for EKS cluster and deploy images to Kubernetes using Helm
                         sh "aws eks update-kubeconfig --name my-chat-app-cluster --region ${REGION}"
                         sh """
-                        helm upgrade --install backend ./backend --set image.repository=${ECR_BACKEND_IMAGE} --namespace chat-app
-                        helm upgrade --install frontend ./frontend --set image.repository=${ECR_FRONTEND_IMAGE} --namespace chat-app
+                        helm upgrade --install backend ./DevOps_FHN_Assignment/backend/helm-chart --set image.repository=${ECR_BACKEND_IMAGE} --namespace chat-app
+                        helm upgrade --install frontend ./DevOps_FHN_Assignment/frontend/helm-chart --set image.repository=${ECR_FRONTEND_IMAGE} --namespace chat-app
                         """
                     }
                 }
