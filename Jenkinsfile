@@ -14,7 +14,7 @@ pipeline {
     }
 
     stages {
-            stage('Checkout') {
+        stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM', branches: [[name: 'main']], 
                           userRemoteConfigs: [[credentialsId: 'Git_creds', url: 'https://github.com/MeHuman333/DevOps_FHN_Assignment.git']]])
@@ -89,8 +89,8 @@ pipeline {
                 withAWS(credentials: AWS_CREDENTIALS_ID, region: REGION) {
                     script {
                         // Deploy both backend and frontend to production with Blue/Green deployment strategy
-                        sh "aws ecs update-service --cluster Production-cluster --service my-backend-app-staging --force-new-deployment"
-                        sh "aws ecs update-service --cluster Production-cluster --service my-frontend-app-staging --force-new-deployment"
+                        sh "aws ecs update-service --cluster production-cluster --service my-backend-app-prod --force-new-deployment"
+                        sh "aws ecs update-service --cluster production-cluster --service my-frontend-app-prod --force-new-deployment"
                     }
                 }
             }
@@ -100,12 +100,28 @@ pipeline {
             steps {
                 withAWS(credentials: AWS_CREDENTIALS_ID, region: REGION) {
                     script {
-                        // Configure kubectl for EKS cluster and deploy images to Kubernetes using Helm
+                        // Configure kubectl for EKS cluster
                         sh "aws eks update-kubeconfig --name my-chat-app-cluster --region ${REGION}"
-                        sh """
-                        helm upgrade --install backend ./DevOps_FHN_Assignment/backend/helm-chart --set image.repository=${ECR_BACKEND_IMAGE} --namespace chat-app
-                        helm upgrade --install frontend ./DevOps_FHN_Assignment/frontend/helm-chart --set image.repository=${ECR_FRONTEND_IMAGE} --namespace chat-app
-                        """
+
+                        // Ensure Kubernetes namespace exists before deploying
+                        sh "kubectl get ns chat-app || kubectl create ns chat-app"
+
+                        // Deploy backend and frontend using Helm
+                        dir('DevOps_FHN_Assignment/backend/helm-chart') {
+                            sh """
+                            helm upgrade --install backend . \
+                                --set image.repository=${ECR_BACKEND_IMAGE} \
+                                --namespace chat-app
+                            """
+                        }
+
+                        dir('DevOps_FHN_Assignment/frontend/helm-chart') {
+                            sh """
+                            helm upgrade --install frontend . \
+                                --set image.repository=${ECR_FRONTEND_IMAGE} \
+                                --namespace chat-app
+                            """
+                        }
                     }
                 }
             }
@@ -123,17 +139,21 @@ pipeline {
         stage('Setup Monitoring with Prometheus and Grafana') {
             steps {
                 script {
-                    // Install Prometheus and Grafana using Helm
-                   // sh """
-                   // helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-                   // helm repo add grafana https://grafana.github.io/helm-charts
-                   // helm repo update
-                   // helm install prometheus prometheus-community/prometheus --namespace monitoring
-                   // helm install grafana grafana/grafana --namespace monitoring
-                   // """
-                    
+                    // The following Helm setup commands are commented out for safety.
+                    // Uncomment and adjust them if needed for production use.
+
+                    /*
+                    sh """
+                    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+                    helm repo add grafana https://grafana.github.io/helm-charts
+                    helm repo update
+                    helm install prometheus prometheus-community/prometheus --namespace monitoring
+                    helm install grafana grafana/grafana --namespace monitoring
+                    """
+                    */
+
                     // Output Grafana access information
-                    //echo "Grafana URL: http://<grafana-service-external-ip>:3000"
+                    echo "Use http://<grafana-service-external-ip>:3000 for Grafana access"
                     echo "Use admin/admin for initial Grafana login."
                 }
             }
