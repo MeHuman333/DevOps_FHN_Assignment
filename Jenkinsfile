@@ -14,39 +14,7 @@ pipeline {
     }
 
     stages {
-        stage('Create EKS Cluster') {
-            steps {
-                withAWS(credentials: AWS_CREDENTIALS_ID, region: REGION) {
-                    script {
-                        // Create the EKS cluster if it does not exist
-                        sh """
-                        aws eks create-cluster \
-                            --name my-chat-app-cluster \
-                            --role-arn arn:aws:iam::${ACCOUNT_ID}:role/EKSClusterRole \
-                            --resources-vpc-config subnetIds=subnet-07f53821c5571338c,subnet-0b6eec8e8f6b141d7,securityGroupIds=sg-00069e451d8bc4fad
-                        """
-
-                        // Wait for cluster to be active
-                        sh "aws eks wait cluster-active --name my-chat-app-cluster"
-
-                        // Create node group for EKS cluster
-                        sh """
-                        aws eks create-nodegroup \
-                            --cluster-name my-chat-app-cluster \
-                            --nodegroup-name my-node-group \
-                            --scaling-config minSize=2,maxSize=5,desiredSize=3 \
-                            --node-role arn:aws:iam::${ACCOUNT_ID}:role/EKSNodeRole \
-                            --subnets subnet-07f53821c5571338c subnet-0b6eec8e8f6b141d7
-                        """
-
-                        // Wait for node group to be active
-                        sh "aws eks wait nodegroup-active --cluster-name my-chat-app-cluster --nodegroup-name my-node-group"
-                    }
-                }
-            }
-        }
-
-        stage('Checkout') {
+            stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM', branches: [[name: 'main']], 
                           userRemoteConfigs: [[credentialsId: 'Git_creds', url: 'https://github.com/MeHuman333/DevOps_FHN_Assignment.git']]])
