@@ -89,8 +89,8 @@ pipeline {
                 withAWS(credentials: AWS_CREDENTIALS_ID, region: REGION) {
                     script {
                         // Deploy both backend and frontend to production with Blue/Green deployment strategy
-                        sh "aws ecs update-service --cluster production-cluster --service my-backend-app-prod --force-new-deployment"
-                        sh "aws ecs update-service --cluster production-cluster --service my-frontend-app-prod --force-new-deployment"
+                        sh "aws ecs update-service --cluster Production-cluster --service my-backend-app-prod --force-new-deployment"
+                        sh "aws ecs update-service --cluster Production-cluster --service my-frontend-app-prod --force-new-deployment"
                     }
                 }
             }
